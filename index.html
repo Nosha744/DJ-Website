@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ Song Requests</title>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Chart.js for the earnings graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🎶 DJ Song Requests</h1>
+            <nav>
+                <button id="nav-user" class="active">Request a Song</button>
+                <button id="nav-public">Public Queue</button>
+                <button id="nav-dj">DJ Login</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- USER VIEW: Request Any Song -->
+            <section id="user-view" class="view active">
+                <h2>Request Any Song</h2>
+                <p>Enter the song and artist you'd like to hear. The DJ will do their best to find it!</p>
+                <div class="request-form">
+                    <input type="text" id="song-title-input" placeholder="Enter Song Title" required>
+                    <input type="text" id="song-artist-input" placeholder="Enter Artist Name" required>
+                    <div id="request-error">Please fill out both song title and artist.</div>
+                    <button id="request-song-btn" class="action-btn">Request (0.50 CHF)</button>
+                </div>
+            </section>
+
+            <!-- PUBLIC QUEUE VIEW -->
+            <section id="public-queue-view" class="view">
+                <h2>Current Request Queue</h2>
+                <p>Songs update in real-time. Only paid requests are shown.</p>
+                <ul id="public-queue-list" class="request-queue">
+                    <!-- Public queue will be populated by JavaScript -->
+                </ul>
+            </section>
+            
+            <!-- DJ LOGIN VIEW -->
+            <section id="dj-login-view" class="view">
+                <h2>DJ Private Access</h2>
+                <form id="login-form">
+                    <input type="password" id="dj-password" placeholder="Enter password">
+                    <button type="submit" class="action-btn">Login</button>
+                </form>
+                <p id="login-error">Incorrect password. Please try again.</p>
+            </section>
+
+            <!-- DJ DASHBOARD VIEW (Private) -->
+            <section id="dj-dashboard-view" class="view">
+                <h2>
+                    <span>Management Dashboard</span>
+                    <span id="total-earnings">Total: 0.00 CHF</span>
+                </h2>
+                
+                <h3>Incoming Requests</h3>
+                <ul id="dj-queue-list" class="request-queue">
+                    <!-- DJ's private queue will be populated by JavaScript -->
+                </ul>
+
+                <h3>Earnings Over Time</h3>
+                <canvas id="earnings-chart"></canvas>
+            </section>
+        </main>
+        
+        <footer>
+            <p>This is a demonstration. Payments are simulated.</p>
+        </footer>
+    </div>
+
+    <!-- External JavaScript (defer ensures it runs after the HTML is parsed) -->
+    <script src="script.js" defer></script>
+</body>
+</html>
