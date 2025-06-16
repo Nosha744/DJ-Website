@@ -1,8 +1,8 @@
-// public/js/script.js
+// script.js
 
 $(document).ready(function() {
     const songRequestForm = $('#songRequestForm');
-    const payButton = $('#payButton');
+    const payButton = $('#payButton'); // This now correctly selects the button
     const messageArea = $('#messageArea');
     const nameInput = $('#name');
     const songTitleInput = $('#songTitle');
@@ -10,17 +10,19 @@ $(document).ready(function() {
 
     const PAYREXX_BASE_URL = "https://dj-n744.payrexx.com/pay?tid=ec96356d";
 
-    $(".btn-payrexx-modal").payrexxModal();
+    // Initialize the Payrexx modal functionality on the button
+    payButton.payrexxModal();
 
+    // **** FIX: This click handler now correctly modifies the link before the Payrexx modal opens ****
     payButton.on('click', function(e) {
-        // ... (The existing code for the pay button click handler remains exactly the same)
-        messageArea.html('').removeClass('message-success message-error');
+        messageArea.html('').removeClass('message-success message-error message-info');
 
         const name = nameInput.val().trim();
         const songTitle = songTitleInput.val().trim();
 
         if (!songTitle) {
-            e.preventDefault();
+            e.preventDefault(); // Stop the link from being followed
+            e.stopImmediatePropagation(); // Stop other scripts (like Payrexx's modal) from running
             showMessage('Song title is required.', 'error');
             songTitleInput.focus();
             return;
@@ -28,40 +30,42 @@ $(document).ready(function() {
 
         const internalRef = generateUUID();
         const songData = { name: name, songTitle: songTitle, internalRef: internalRef };
+        
         try {
             sessionStorage.setItem(internalRef, JSON.stringify(songData));
         } catch (storageError) {
             console.error("Error saving to sessionStorage:", storageError);
             e.preventDefault();
+            e.stopImmediatePropagation();
             showMessage('Could not prepare payment. Please try again.', 'error');
             return;
         }
         
         const newHref = `${PAYREXX_BASE_URL}&reference=${internalRef}&amount=100¤cy=CHF`;
         $(this).attr('href', newHref);
-        showMessage('Redirecting to payment...', 'info');
     });
 
-    // --- Check for payment status (this part also remains the same) ---
+    // --- Check for payment status on page load ---
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment_status');
     const prReference = urlParams.get('pr_reference');
 
     if (prReference) {
+        // Clean the URL to prevent re-submission on refresh
         if (window.history.replaceState) {
             const cleanURL = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({ path: cleanURL }, '', cleanURL);
         }
 
         const storedSongDataJSON = sessionStorage.getItem(prReference);
-        sessionStorage.removeItem(prReference);
+        sessionStorage.removeItem(prReference); // Clean up immediately
 
         if (paymentStatus === 'success' && storedSongDataJSON) {
             const songData = JSON.parse(storedSongDataJSON);
             if (songData.internalRef === prReference) {
                 submitSongToServer(songData);
             } else {
-                showMessage('Payment successful, but there was an issue linking it to your request.', 'error');
+                showMessage('Payment successful, but there was a reference mismatch.', 'error');
             }
         } else if (paymentStatus === 'failed') {
             showMessage('Payment failed or was cancelled.', 'error');
@@ -71,7 +75,6 @@ $(document).ready(function() {
     }
     
     async function submitSongToServer(songData) {
-        // ... (The existing submitSongToServer function also remains the same, but we add one line)
         showMessage('Payment successful! Submitting your song request...', 'info');
         try {
             const response = await fetch('/submit-song', {
@@ -85,22 +88,20 @@ $(document).ready(function() {
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || `Server error ${response.status}`);
+            
             showMessage('Song requested successfully! Thank you.', 'success');
             songRequestForm[0].reset();
-            fetchPublicQueue(); // <-- ADD THIS LINE: Refresh queue immediately after successful submission
+            fetchPublicQueue(); // Refresh queue immediately
         } catch (error) {
             console.error('Error submitting song to server:', error);
-            showMessage(`Error: ${error.message}. Your payment was successful, but the song couldn't be submitted.`, 'error');
+            showMessage(`Error: ${error.message}. Your payment was successful, but the song couldn't be auto-submitted. Please notify the DJ.`, 'error');
         }
     }
     
-    // --- NEW: Functions for Public Queue ---
     async function fetchPublicQueue() {
         try {
             const response = await fetch('/api/queue');
-            if (!response.ok) {
-                throw new Error('Could not fetch queue.');
-            }
+            if (!response.ok) throw new Error('Could not fetch queue.');
             const queue = await response.json();
             renderPublicQueue(queue);
         } catch (error) {
@@ -110,9 +111,9 @@ $(document).ready(function() {
     }
 
     function renderPublicQueue(queue) {
-        publicQueueList.empty(); // Clear the list first
+        publicQueueList.empty();
         if (queue.length === 0) {
-            publicQueueList.append('<li class="empty">The queue is currently empty. Be the first to request a song!</li>');
+            publicQueueList.append('<li class="empty">The queue is currently empty. Be the first!</li>');
         } else {
             queue.forEach(request => {
                 const listItem = `
@@ -126,30 +127,22 @@ $(document).ready(function() {
     }
 
     function escapeHTML(str) {
-        return str.replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&', '<': '<', '>': '>',
-                "'": ''', '"': '"'
-            }[tag] || tag)
-        );
+        const p = document.createElement('p');
+        p.textContent = str;
+        return p.innerHTML;
     }
     
     function showMessage(text, type = 'info') {
-        // ... (This function remains the same)
         messageArea.text(text).removeClass('message-success message-error message-info').addClass(`message-${type}`);
     }
 
     function generateUUID() {
-        // ... (This function remains the same)
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
     }
 
-    // Initial fetch of the queue when the page loads
     fetchPublicQueue();
-
-    // Periodically refresh the queue every 15 seconds
     setInterval(fetchPublicQueue, 15000);
 });
