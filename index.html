@@ -23,9 +23,38 @@
                     <label for="songTitle">Song Title (Required):</label>
                     <input type="text" id="songTitle" name="songTitle" required>
                 </div>
-                <a id="payButton" class="btn-payrexx btn-payrexx-modal" href="https://dj-n744.payrexx.com/pay?tid=ec96356d">
-                    Pay & Request Song
-                </a>
+             <a class="btn-payrexx btn-payrexx-modal" href="https://dj-n744.payrexx.com/pay?tid=ec96356d">
+Bezahlen
+</a>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://media.payrexx.com/modal/v1/modal.min.js"></script>
+<script type="text/javascript">
+    jQuery(".btn-payrexx-modal").payrexxModal();
+</script>
+<style type="text/css">
+.btn-payrexx {
+	display: inline-block;
+	width: auto;
+	padding: 6px 20px 6px 20px;
+	font-size: 23px;
+	font-weight: 300;
+	white-space: inherit;
+	background-color: #00aff0;
+	border: 0;
+	outline: 0;
+	text-decoration: none;
+	color: #ffffff;
+	border-radius: 3px;
+	-webkit-transition: background-color 300ms ease-out;
+	-moz-transition: background-color 300ms ease-out;
+	-o-transition: background-color 300ms ease-out;
+	transition: background-color 300ms ease-out;
+}
+.btn-payrexx:focus, .btn-payrexx:hover {
+	background-color: #7fba00;
+	color: #ffffff;
+}
+</style>
             </form>
             <div id="messageArea"></div>
         </div>
