@@ -1,4 +1,4 @@
-// public/js/admin.js
+// admin.js
 
 document.addEventListener('DOMContentLoaded', () => {
     const requestList = document.getElementById('request-list');
@@ -6,47 +6,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageArea = document.getElementById('message-area');
     let sortable;
 
-    // Initialize SortableJS for drag-and-drop
     if (requestList) {
         sortable = new Sortable(requestList, {
             animation: 150,
-            handle: 'tr', // Allow dragging the entire row
+            handle: 'tr',
             filter: '.status-played', // Do not allow dragging 'played' items
             onEnd: () => {
-                saveOrderBtn.style.display = 'inline-block'; // Show the save button after a change
+                saveOrderBtn.style.display = 'inline-block';
             }
         });
     }
 
-    // Event listener for "Mark as Played" buttons
     requestList.addEventListener('click', async (e) => {
         if (e.target.classList.contains('btn-played')) {
-            const songId = e.target.dataset.id;
+            const button = e.target;
+            button.disabled = true; // Prevent double clicks
+            const songId = button.dataset.id;
+            
             try {
                 const response = await fetch(`/admin/mark-played/${songId}`, {
                     method: 'POST',
                 });
                 if (response.ok) {
-                    // Visually update the row without a full page reload
-                    const row = e.target.closest('tr');
+                    const row = button.closest('tr');
                     row.classList.remove('status-pending');
                     row.classList.add('status-played');
                     row.querySelector('.status-badge').textContent = 'played';
-                    e.target.remove(); // Remove the button
+                    button.remove(); // Remove the button entirely
                     showMessage('Song marked as played.', 'success');
                 } else {
-                   showMessage('Failed to update song status.', 'error');
+                   const result = await response.json();
+                   showMessage(result.message || 'Failed to update song status.', 'error');
+                   button.disabled = false;
                 }
             } catch (error) {
                 console.error('Error marking song as played:', error);
                 showMessage('An error occurred.', 'error');
+                button.disabled = false;
             }
         }
     });
 
-    // Event listener for the "Save Order" button
     saveOrderBtn.addEventListener('click', async () => {
-        const order = sortable.toArray(); // Gets an array of the data-id attributes
+        const order = sortable.toArray();
+        saveOrderBtn.disabled = true;
+        saveOrderBtn.textContent = 'Saving...';
+        
         try {
             const response = await fetch('/admin/update-order', {
                 method: 'POST',
@@ -55,13 +60,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (response.ok) {
                 showMessage('Queue order saved successfully!', 'success');
-                saveOrderBtn.style.display = 'none'; // Hide button after saving
+                saveOrderBtn.style.display = 'none';
             } else {
-                showMessage('Failed to save order.', 'error');
+                const result = await response.json();
+                showMessage(result.message || 'Failed to save order.', 'error');
             }
         } catch (error) {
             console.error('Error saving order:', error);
             showMessage('An error occurred while saving the order.', 'error');
+        } finally {
+            saveOrderBtn.disabled = false;
+            saveOrderBtn.textContent = 'Save Order';
         }
     });
 
