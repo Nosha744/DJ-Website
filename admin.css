@@ -1,0 +1,174 @@
+/* public/css/admin.css */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 20px;
+}
+
+/* --- Login Page --- */
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 40px;
+    background-color: #181818;
+    border: 1px solid #282828;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.login-container h1 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #ffffff;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #b3b3b3;
+}
+
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background-color: #282828;
+    color: #ffffff;
+    box-sizing: border-box;
+}
+
+.error-message {
+    color: #f44336;
+    margin-top: -10px;
+    margin-bottom: 15px;
+}
+
+/* --- Admin Dashboard --- */
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #282828;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    margin: 0;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.controls p {
+    color: #b3b3b3;
+    margin: 0;
+}
+#saveOrderBtn {
+    display: none; /* Hidden by default */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #282828;
+}
+
+th {
+    background-color: #1f1f1f;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+tr {
+    background-color: #181818;
+    cursor: grab; /* Indicates draggable */
+}
+tr:hover {
+    background-color: #2a2a2a;
+}
+tr.status-played {
+    background-color: #1a2c22; /* Dark green tint */
+    color: #888;
+    cursor: not-allowed;
+}
+tr.status-played .status-badge {
+    background-color: #888;
+}
+tr.sortable-ghost {
+    opacity: 0.4;
+    background: #282828;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    text-transform: capitalize;
+    background-color: #1DB954;
+    color: #121212;
+    font-weight: bold;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 500px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    color: #121212;
+    background-color: #1DB954;
+    transition: background-color 0.2s, transform 0.1s;
+}
+.btn:hover {
+    background-color: #1ed760;
+    transform: scale(1.03);
+}
+
+.btn-secondary {
+    background-color: #444;
+    color: #fff;
+}
+.btn-secondary:hover {
+    background-color: #555;
+}
+
+.btn-action.btn-played {
+    font-size: 0.8em;
+    padding: 6px 12px;
+}
+
+#message-area {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.message.success { background-color: rgba(29, 185, 84, 0.2); color: #1DB954; }
+.message.error { background-color: rgba(220, 53, 69, 0.2); color: #dc3545; }
