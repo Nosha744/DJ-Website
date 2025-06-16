@@ -1,0 +1,20 @@
+<!-- ... inside <table> ... -->
+<thead>
+    <tr>
+        <th data-sort="timestamp">Timestamp</th>
+        <th data-sort="name">Name</th>
+        <th data-sort="songTitle">Song Title</th>
+        <th data-sort="paymentReference">Payment Ref.</th> <!-- Added column -->
+    </tr>
+</thead>
+<tbody>
+    <% songRequests.forEach(request => { %>
+        <tr>
+            <td><%= new Date(request.timestamp).toLocaleString() %></td>
+            <td><%= request.name || 'N/A' %></td>
+            <td><%= request.songTitle %></td>
+            <td><%= request.paymentReference || 'N/A' %></td> <!-- Added data cell -->
+        </tr>
+    <% }) %>
+</tbody>
+<!-- ... -->
