@@ -1,4 +1,4 @@
-<!-- public/index.html -->
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DJ Song Request</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css"> <!-- Corrected path -->
+    <!-- **CHANGE**: Corrected path to stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="main-content">
@@ -14,7 +15,7 @@
             <h1>Request a Song</h1>
             <p class="price-info">Price per request: CHF 1.00</p>
 
-            <form id="songRequestForm">
+            <form id="songRequestForm" onsubmit="return false;"> <!-- Prevent default form submission -->
                 <div class="form-group">
                     <label for="name">Your Name (Optional):</label>
                     <input type="text" id="name" name="name">
@@ -23,58 +24,27 @@
                     <label for="songTitle">Song Title (Required):</label>
                     <input type="text" id="songTitle" name="songTitle" required>
                 </div>
-             <a class="btn-payrexx btn-payrexx-modal" href="https://dj-n744.payrexx.com/pay?tid=ec96356d">
-Bezahlen
-</a>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
-<script type="text/javascript" src="https://media.payrexx.com/modal/v1/modal.min.js"></script>
-<script type="text/javascript">
-    jQuery(".btn-payrexx-modal").payrexxModal();
-</script>
-<style type="text/css">
-.btn-payrexx {
-	display: inline-block;
-	width: auto;
-	padding: 6px 20px 6px 20px;
-	font-size: 23px;
-	font-weight: 300;
-	white-space: inherit;
-	background-color: #00aff0;
-	border: 0;
-	outline: 0;
-	text-decoration: none;
-	color: #ffffff;
-	border-radius: 3px;
-	-webkit-transition: background-color 300ms ease-out;
-	-moz-transition: background-color 300ms ease-out;
-	-o-transition: background-color 300ms ease-out;
-	transition: background-color 300ms ease-out;
-}
-.btn-payrexx:focus, .btn-payrexx:hover {
-	background-color: #7fba00;
-	color: #ffffff;
-}
-</style>
+                <!-- **** FIX: Added id="payButton" to this link **** -->
+                <a id="payButton" class="btn-payrexx btn-payrexx-modal" href="https://dj-n744.payrexx.com/pay?tid=ec96356d">
+                    Bezahlen
+                </a>
             </form>
             <div id="messageArea"></div>
         </div>
 
-        <!-- NEW: Public Queue Section -->
+        <!-- Public Queue Section -->
         <div class="public-queue-container">
             <h2>Live Song Queue</h2>
             <ul id="public-queue-list">
-                <!-- Song requests will be dynamically inserted here -->
                 <li class="loading">Loading queue...</li>
             </ul>
         </div>
     </div>
 
-
-    <!-- jQuery (Payrexx modal dependency) -->
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <!-- Payrexx Modal Script -->
-    <script type="text/javascript" src="https://media.payrexx.com/modal/v1/modal.min.js"></script>
-    
-    <script src="/js/script.js"></script> <!-- Corrected path -->
+    <script src="https://media.payrexx.com/modal/v1/modal.min.js"></script>
+    <!-- **CHANGE**: Corrected path to script -->
+    <script src="script.js"></script>
 </body>
 </html>
