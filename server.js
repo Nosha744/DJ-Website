@@ -1,4 +1,5 @@
 // server.js
+// All files (html, css, js) are in the root folder.
 
 require('dotenv').config();
 const express = require('express');
@@ -8,23 +9,27 @@ const session = require('express-session');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY;
-const ADMIN_PASSWORD = "3233"; // The admin password as requested
+const ADMIN_PASSWORD = "3233";
 
 // In-memory store for song requests.
-// IMPORTANT: This data is lost when the server restarts.
+// This data is lost when the server restarts.
 let songRequests = [];
 let orderCounter = 0; // To maintain a default order
 
+// --- Middleware Setup ---
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Needed for form submissions (login)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
+
+// **CHANGE**: Serve static files from the root directory
+app.use(express.static(__dirname));
+
+// **CHANGE**: Look for .ejs view templates in the root directory
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', __dirname);
 
 // Session middleware for admin login
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a-very-strong-secret-key', // Use an env variable for this in production
+    secret: process.env.SESSION_SECRET || 'a-very-strong-secret-key-for-dj-app',
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false } // Set to true if using HTTPS
@@ -43,8 +48,8 @@ const checkAuth = (req, res, next) => {
 // API endpoint for the public to get the current song queue
 app.get('/api/queue', (req, res) => {
     const publicQueue = songRequests
-        .filter(req => req.status === 'pending') // Only show pending songs
-        .sort((a, b) => a.order - b.order)       // Sort by the custom order
+        .filter(req => req.status === 'pending')
+        .sort((a, b) => a.order - b.order)
         .map(req => ({
             name: req.name,
             songTitle: req.songTitle
@@ -60,14 +65,21 @@ app.post('/submit-song', (req, res) => {
         return res.status(400).json({ error: "Song title and payment reference are required." });
     }
 
+    // Prevent duplicate submissions with the same payment reference
+    const existingRequest = songRequests.find(r => r.paymentReference === reference);
+    if (existingRequest) {
+        console.log("Duplicate song submission attempt blocked for reference:", reference);
+        return res.status(409).json({ error: "This payment has already been used for a song request." });
+    }
+
     const newRequest = {
         id: uuidv4(),
-        name: name || 'N/A',
+        name: name || 'Anonymous', // Default to Anonymous if name is empty
         songTitle: songTitle,
         timestamp: new Date(),
         paymentReference: reference,
         status: 'pending', // 'pending', 'played'
-        order: orderCounter++ // Assign an incremental order
+        order: orderCounter++
     };
     songRequests.push(newRequest);
 
@@ -95,7 +107,6 @@ app.post('/admin/login', (req, res) => {
 
 // Admin dashboard (protected)
 app.get('/admin', checkAuth, (req, res) => {
-    // Sort requests to show pending ones first, then by their custom order
     const sortedRequests = [...songRequests].sort((a, b) => {
         if (a.status === 'pending' && b.status !== 'pending') return -1;
         if (a.status !== 'pending' && b.status === 'pending') return 1;
@@ -124,10 +135,7 @@ app.post('/admin/update-order', checkAuth, (req, res) => {
         return res.status(400).json({ success: false, message: 'Invalid order data.' });
     }
 
-    // Create a map for quick lookups
     const requestMap = new Map(songRequests.map(r => [r.id, r]));
-
-    // Re-assign the 'order' property based on the new array index
     order.forEach((id, index) => {
         const request = requestMap.get(id);
         if (request) {
@@ -138,7 +146,6 @@ app.post('/admin/update-order', checkAuth, (req, res) => {
     console.log('Updated song order.');
     res.json({ success: true, message: 'Order updated successfully.' });
 });
-
 
 // Admin logout
 app.get('/admin/logout', (req, res) => {
@@ -151,9 +158,9 @@ app.get('/admin/logout', (req, res) => {
     });
 });
 
-
 // --- Server Start ---
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Public page: http://localhost:${PORT}/index.html`);
     console.log(`Admin login: http://localhost:${PORT}/admin/login`);
 });
