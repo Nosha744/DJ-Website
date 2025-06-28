@@ -1,41 +1,34 @@
 // server.js
-// All files (html, css, js) are in the root folder.
-
 require('dotenv').config();
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
-const path = require('path');
+const path =path.resolve( './');
 const session = require('express-session');
+const { createClient } = require('@supabase/supabase-js');
 
+// --- App and Supabase Setup ---
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = "3233";
 
-// In-memory store for song requests.
-// This data is lost when the server restarts.
-let songRequests = [];
-let orderCounter = 0; // To maintain a default order
+// **CHANGE**: Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Middleware Setup ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// **CHANGE**: Serve static files from the root directory
-app.use(express.static(__dirname));
-
-// **CHANGE**: Look for .ejs view templates in the root directory
+app.use(express.static(path));
 app.set('view engine', 'ejs');
-app.set('views', __dirname);
+app.set('views', path);
 
-// Session middleware for admin login
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a-very-strong-secret-key-for-dj-app',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false } // Set to true if using HTTPS
 }));
 
-// Middleware to protect admin routes
 const checkAuth = (req, res, next) => {
     if (req.session.isAdmin) {
         return next();
@@ -45,59 +38,49 @@ const checkAuth = (req, res, next) => {
 
 // --- PUBLIC ENDPOINTS ---
 
-// API endpoint for the public to get the current song queue
-app.get('/api/queue', (req, res) => {
-    const publicQueue = songRequests
-        .filter(req => req.status === 'pending')
-        .sort((a, b) => a.order - b.order)
-        .map(req => ({
-            name: req.name,
-            songTitle: req.songTitle
-        }));
-    res.json(publicQueue);
+// API endpoint to get the public queue of pending songs
+app.get('/api/queue', async (req, res) => {
+    const { data, error } = await supabase
+        .from('song_requests')
+        .select('name, song_title')
+        .eq('status', 'pending')
+        .order('queue_order', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching queue:', error);
+        return res.status(500).json({ error: 'Could not fetch the queue.' });
+    }
+    res.json(data);
 });
 
-// Endpoint to submit the song request (from Payrexx redirect)
-app.post('/submit-song', (req, res) => {
-    const { name, songTitle, reference } = req.body;
+// Endpoint to submit a new song request (no payment)
+app.post('/submit-song', async (req, res) => {
+    const { name, songTitle } = req.body;
 
-    if (!songTitle || !reference) {
-        return res.status(400).json({ error: "Song title and payment reference are required." });
+    if (!songTitle) {
+        return res.status(400).json({ error: "Song title is required." });
     }
 
-    // Prevent duplicate submissions with the same payment reference
-    const existingRequest = songRequests.find(r => r.paymentReference === reference);
-    if (existingRequest) {
-        console.log("Duplicate song submission attempt blocked for reference:", reference);
-        return res.status(409).json({ error: "This payment has already been used for a song request." });
+    const { data, error } = await supabase
+        .from('song_requests')
+        .insert([{ name: name || 'Anonymous', song_title: songTitle }])
+        .select();
+
+    if (error) {
+        console.error('Error inserting song:', error);
+        return res.status(500).json({ error: 'Could not submit your request.' });
     }
 
-    const newRequest = {
-        id: uuidv4(),
-        name: name || 'Anonymous', // Default to Anonymous if name is empty
-        songTitle: songTitle,
-        timestamp: new Date(),
-        paymentReference: reference,
-        status: 'pending', // 'pending', 'played'
-        order: orderCounter++
-    };
-    songRequests.push(newRequest);
-
-    console.log("Song request submitted and saved:", newRequest);
-    res.status(201).json({ message: 'Song request submitted successfully!', request: newRequest });
+    console.log("Song request saved to Supabase:", data[0]);
+    res.status(201).json({ message: 'Song request submitted successfully!', request: data[0] });
 });
 
 // --- ADMIN ENDPOINTS ---
 
-// Admin login page
-app.get('/admin/login', (req, res) => {
-    res.render('login', { error: null });
-});
+app.get('/admin/login', (req, res) => res.render('login', { error: null }));
 
-// Handle admin login
 app.post('/admin/login', (req, res) => {
-    const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
+    if (req.body.password === ADMIN_PASSWORD) {
         req.session.isAdmin = true;
         res.redirect('/admin');
     } else {
@@ -105,57 +88,59 @@ app.post('/admin/login', (req, res) => {
     }
 });
 
-// Admin dashboard (protected)
-app.get('/admin', checkAuth, (req, res) => {
-    const sortedRequests = [...songRequests].sort((a, b) => {
-        if (a.status === 'pending' && b.status !== 'pending') return -1;
-        if (a.status !== 'pending' && b.status === 'pending') return 1;
-        return a.order - b.order;
-    });
-    res.render('admin', { songRequests: sortedRequests });
-});
+// Admin dashboard - fetches all songs from Supabase
+app.get('/admin', checkAuth, async (req, res) => {
+    const { data, error } = await supabase
+        .from('song_requests')
+        .select('*')
+        .order('status', { ascending: true }) // 'pending' comes before 'played'
+        .order('queue_order', { ascending: true });
 
-// Endpoint to mark a song as played (protected)
-app.post('/admin/mark-played/:id', checkAuth, (req, res) => {
-    const { id } = req.params;
-    const request = songRequests.find(r => r.id === id);
-    if (request) {
-        request.status = 'played';
-        console.log(`Marked song ${request.songTitle} as played.`);
-        res.json({ success: true, message: 'Status updated to played.' });
-    } else {
-        res.status(404).json({ success: false, message: 'Song not found.' });
+    if (error) {
+        console.error('Error fetching songs for admin:', error);
+        return res.status(500).send("Error loading dashboard data.");
     }
+    res.render('admin', { songRequests: data || [] });
 });
 
-// Endpoint to update the order of songs (protected)
-app.post('/admin/update-order', checkAuth, (req, res) => {
+// Mark a song as 'played'
+app.post('/admin/mark-played/:id', checkAuth, async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase
+        .from('song_requests')
+        .update({ status: 'played' })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error marking as played:', error);
+        return res.status(500).json({ success: false, message: 'Database error.' });
+    }
+    res.json({ success: true, message: 'Status updated to played.' });
+});
+
+// Update the order of songs in the queue
+app.post('/admin/update-order', checkAuth, async (req, res) => {
     const { order } = req.body; // Expects an array of song IDs
     if (!Array.isArray(order)) {
         return res.status(400).json({ success: false, message: 'Invalid order data.' });
     }
 
-    const requestMap = new Map(songRequests.map(r => [r.id, r]));
-    order.forEach((id, index) => {
-        const request = requestMap.get(id);
-        if (request) {
-            request.order = index;
-        }
-    });
+    const updates = order.map((id, index) => ({
+        id: id,
+        queue_order: index
+    }));
 
-    console.log('Updated song order.');
+    const { error } = await supabase.from('song_requests').upsert(updates);
+
+    if (error) {
+        console.error('Error updating order:', error);
+        return res.status(500).json({ success: false, message: 'Failed to save order.' });
+    }
     res.json({ success: true, message: 'Order updated successfully.' });
 });
 
-// Admin logout
 app.get('/admin/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            return res.redirect('/admin');
-        }
-        res.clearCookie('connect.sid');
-        res.redirect('/admin/login');
-    });
+    req.session.destroy(() => res.redirect('/admin/login'));
 });
 
 // --- Server Start ---
