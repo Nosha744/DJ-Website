@@ -1,0 +1,19 @@
+{
+  "name": "dj-request-app-supabase",
+  "version": "1.0.0",
+  "description": "A DJ song request app using Node.js, Express, and Supabase.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.4",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3"
+  }
+}
